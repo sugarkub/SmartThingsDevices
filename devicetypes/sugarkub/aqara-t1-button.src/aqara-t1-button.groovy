@@ -118,6 +118,7 @@ private Map getBatteryResult(rawValue) {
 
 private Map parseNonIasButtonMessage(Map descMap){
     def buttonState = ""
+    def descriptionText = ""
     if (descMap.clusterInt == 0x0006) {
         if (descMap.commandInt == 2) {
         	buttonState = "pushed"
