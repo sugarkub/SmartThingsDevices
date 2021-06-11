@@ -22,7 +22,7 @@ import groovy.json.JsonOutput
 import physicalgraph.zigbee.zcl.DataType
 
 metadata {
-    definition (name: "Aqara T1 Button (WXKG13LM)", namespace: "sugarkub", author: "sugarkub", runLocally: true, minHubCoreVersion: "000.022.0002", executeCommandsLocally: false, ocfDeviceType: "x.com.st.d.remotecontroller") {
+    definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", runLocally: true, minHubCoreVersion: "000.022.0002", executeCommandsLocally: false, ocfDeviceType: "x.com.st.d.remotecontroller") {
         capability "Actuator"
         capability "Battery"
         capability "Button"
