@@ -22,7 +22,7 @@ import groovy.json.JsonOutput
 import physicalgraph.zigbee.zcl.DataType
 
 metadata {
-    definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", runLocally: true, minHubCoreVersion: "000.022.0002", executeCommandsLocally: false, ocfDeviceType: "x.com.st.d.remotecontroller") {
+    definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", runLocally: false, minHubCoreVersion: "000.022.0002", executeCommandsLocally: false, ocfDeviceType: "x.com.st.d.remotecontroller") {
         capability "Actuator"
         capability "Battery"
         capability "Button"
@@ -31,7 +31,7 @@ metadata {
         capability "Sensor"
         capability "Health Check"
 
-        fingerprint inClusters: "0000, 0003, 0006, 0500", outClusters: "0000, 0003, 0006, 0500", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
+        fingerprint inClusters: "0000, 0003, 0020, 0402, 0500, 0B05", outClusters: "0000, 0003, 0006, 0008, 0500", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
     }
 
     simulator {}
@@ -202,6 +202,6 @@ def updated() {
 def initialize() {
     // Arrival sensors only goes OFFLINE when Hub is off
     sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)
-    sendEvent(name: "numberOfButtons", value: 4, displayed: false)
+    sendEvent(name: "numberOfButtons", value: 1, displayed: false)
     sendEvent(name: "supportedButtonValues", value: ["pushed","double"], displayed: true)
 }
