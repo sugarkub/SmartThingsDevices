@@ -22,25 +22,22 @@ import groovy.json.JsonOutput
 import physicalgraph.zigbee.zcl.DataType
 
 metadata {
-    definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", runLocally: false, minHubCoreVersion: "000.022.0002", executeCommandsLocally: false, ocfDeviceType: "x.com.st.d.remotecontroller") {
-        capability "Actuator"
+    definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
         capability "Battery"
-        capability "Button"
-        capability "Configuration"
-        capability "Refresh"
-        capability "Sensor"
-        capability "Health Check"
+		capability "Button"
+		capability "Actuator"
+		capability "Switch"
+		capability "Momentary"
+		capability "Configuration"
+		capability "Sensor"
+		capability "Refresh"
 
-        fingerprint inClusters: "0000, 0003, 0020, 0402, 0500, 0B05", outClusters: "0000, 0003, 0006, 0008, 0500", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
+        fingerprint inClusters: "0000, 0001, 0006", outClusters: "0000", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
     }
 
     simulator {}
 
-    preferences {
-        section {
-            input ("holdTime", "number", title: "Minimum time in seconds for a press to count as \"held\"", defaultValue: 1, displayDuringSetup: false)
-        }
-    }
+    preferences {}
 
     tiles {
         standardTile("button", "device.button", width: 2, height: 2) {
@@ -51,35 +48,31 @@ metadata {
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
             state "battery", label:'${currentValue}% battery', unit:""
         }
-
+        
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat") {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
+
         main (["button"])
         details(["button", "battery", "refresh"])
     }
 }
 
 def parse(String description) {
-    log.debug "DESC: $description"
+    log.debug "parse >> $description"
     def event = zigbee.getEvent(description)
     if (event) {
         sendEvent(event)
     }
     else {
-        if ((description?.startsWith("catchall:")) || (description?.startsWith("read attr -"))) {
-            def descMap = zigbee.parseDescriptionAsMap(description)
-            if (descMap.clusterInt == 0x0001 && descMap.attrInt == 0x0020 && descMap.value != null) {
-                event = getBatteryResult(zigbee.convertHexToInt(descMap.value))
-            }
-            else if (descMap.clusterInt == 0x0006 || descMap.clusterInt == 0x0008) {
-                event = parseNonIasButtonMessage(descMap)
-            }
+        def descMap = zigbee.parseDescriptionAsMap(description)
+        if (descMap.clusterInt == 0x0001 && descMap.attrInt == 0x0020 && descMap.value != null) {
+            event = getBatteryResult(zigbee.convertHexToInt(descMap.value))
         }
-        else if (description?.startsWith('zone status')) {
-            event = parseIasButtonMessage(description)
+        else if (descMap.clusterInt == 0x0006) {
+            event = parseButtonMessage(descMap)
         }
-
+        
         log.debug "Parse returned $event"
         def result = event ? createEvent(event) : []
 
@@ -89,11 +82,6 @@ def parse(String description) {
         }
         return result
     }
-}
-
-private Map parseIasButtonMessage(String description) {	
-    def zs = zigbee.parseZoneStatus(description)
-    return zs.isAlarm2Set() ? getButtonResult("press") : getButtonResult("release")
 }
 
 private Map getBatteryResult(rawValue) {
@@ -116,20 +104,19 @@ private Map getBatteryResult(rawValue) {
     }
 }
 
-private Map parseNonIasButtonMessage(Map descMap){
+private Map parseButtonMessage(Map descMap){
     def buttonState = ""
     def descriptionText = ""
-    if (descMap.clusterInt == 0x0006) {
-        if (descMap.commandInt == 2) {
-        	buttonState = "pushed"
-        	descriptionText = "$device.displayName button was pushed"
-        } else if (descMap.commandInt == 0) {
-        	buttonState = "double"
-        	descriptionText = "$device.displayName button was double"
-        }
-        
-        return createEvent(name: "button", value: buttonState, data: [buttonState: descMap.commandInt], descriptionText: descriptionText, isStateChange: true)        
+    
+    if (descMap.commandInt == 2) {
+        buttonState = "pushed"
+        descriptionText = "$device.displayName button was pushed"
+    } else if (descMap.commandInt == 0) {
+        buttonState = "double"
+        descriptionText = "$device.displayName button was double clicked"
     }
+    
+    return createEvent(name: "button", value: buttonState, data: [buttonState: descMap.commandInt], descriptionText: descriptionText, isStateChange: true)
 }
 
 def refresh() {
@@ -140,7 +127,7 @@ def refresh() {
 }
 
 def configure() {
-    log.debug "Configuring Reporting, IAS CIE, and Bindings."
+    log.debug "Configuring Aqara T1 Button (WXKG13LM)"
     def cmds = []
     return zigbee.onOffConfig() +
             zigbee.levelConfig() +
@@ -149,41 +136,6 @@ def configure() {
             zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20) +
             cmds
 
-}
-
-private Map getButtonResult(buttonState, buttonNumber = 0) {
-	log.debug 'getButtonResult $buttonState'
-    if (buttonState == 'release') {
-        log.debug "Button was value : $buttonState"
-        if(state.pressTime == null) {
-            return [:]
-        }
-        def timeDiff = now() - state.pressTime
-        log.info "timeDiff: $timeDiff"
-        def holdPreference = holdTime ?: 1
-        log.info "holdp1 : $holdPreference"
-        holdPreference = (holdPreference as int) * 1000
-        log.info "holdp2 : $holdPreference"
-        if (timeDiff > 10000) {         //timeDiff>10sec check for refresh sending release value causing actions to be executed
-            return [:]
-        }
-        else {
-            if (timeDiff < holdPreference) {
-                buttonState = "pushed"
-            }
-            else {
-                buttonState = "held"
-            }
-            def descriptionText = "$device.displayName button $buttonNumber was $buttonState"
-            return createEvent(name: "aq button", value: buttonState, data: [buttonNumber: buttonNumber], descriptionText: descriptionText, isStateChange: true)
-        }
-    }
-    else if (buttonState == 'press') {
-        log.debug "Button was value : $buttonState"
-        state.pressTime = now()
-        log.info "presstime: ${state.pressTime}"
-        return [:]
-    }
 }
 
 def installed() {
@@ -201,7 +153,7 @@ def updated() {
 
 def initialize() {
     // Arrival sensors only goes OFFLINE when Hub is off
-    sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)
+    sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)    
     sendEvent(name: "numberOfButtons", value: 1, displayed: false)
     sendEvent(name: "supportedButtonValues", value: ["pushed","double"], displayed: true)
 }
