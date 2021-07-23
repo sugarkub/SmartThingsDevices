@@ -24,15 +24,15 @@ import physicalgraph.zigbee.zcl.DataType
 metadata {
     definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
         capability "Battery"
-		capability "Button"
-		capability "Actuator"
-		capability "Switch"
-		capability "Momentary"
-		capability "Configuration"
-		capability "Sensor"
-		capability "Refresh"
+        capability "Button"
+        capability "Actuator"
+        capability "Switch"
+        capability "Momentary"
+        capability "Configuration"
+        capability "Sensor"
+        capability "Refresh"
 
-        fingerprint inClusters: "0000, 0001, 0006", outClusters: "0000", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
+        fingerprint inClusters: "0000, 0003, 0001", outClusters: "0003, 0019, 0006", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
     }
 
     simulator {}
