@@ -48,7 +48,7 @@ metadata {
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
             state "battery", label:'${currentValue}% battery', unit:""
         }
-        
+
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat") {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
@@ -72,7 +72,7 @@ def parse(String description) {
         else if (descMap.clusterInt == 0x0006) {
             event = parseButtonMessage(descMap)
         }
-        
+
         log.debug "Parse returned $event"
         def result = event ? createEvent(event) : []
 
@@ -107,7 +107,7 @@ private Map getBatteryResult(rawValue) {
 private Map parseButtonMessage(Map descMap){
     def buttonState = ""
     def descriptionText = ""
-    
+
     if (descMap.commandInt == 2) {
         buttonState = "pushed"
         descriptionText = "$device.displayName button was pushed"
@@ -115,7 +115,7 @@ private Map parseButtonMessage(Map descMap){
         buttonState = "double"
         descriptionText = "$device.displayName button was double clicked"
     }
-    
+
     return createEvent(name: "button", value: buttonState, data: [buttonState: descMap.commandInt], descriptionText: descriptionText, isStateChange: true)
 }
 
@@ -153,7 +153,11 @@ def updated() {
 
 def initialize() {
     // Arrival sensors only goes OFFLINE when Hub is off
-    sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)    
+    sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)
     sendEvent(name: "numberOfButtons", value: 1, displayed: false)
     sendEvent(name: "supportedButtonValues", value: ["pushed","double"], displayed: true)
+
+    // Leave from all groups
+    def cmds = zigbee.command(0x0004, 0x04)
+	cmds.each { sendHubCommand(new physicalgraph.device.HubAction(it)) }
 }
