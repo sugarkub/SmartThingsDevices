@@ -26,7 +26,6 @@ metadata {
         capability "Battery"
         capability "Button"
         capability "Actuator"
-        capability "Switch"
         capability "Momentary"
         capability "Configuration"
         capability "Sensor"
