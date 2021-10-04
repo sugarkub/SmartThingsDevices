@@ -35,24 +35,6 @@ metadata {
     simulator {}
 
     preferences {}
-
-    tiles {
-        standardTile("button", "device.button", width: 2, height: 2) {
-            state "default", label: "", icon: "st.unknown.zwave.remote-controller", backgroundColor: "#ffffff"
-            state "button 1 pushed", label: "pushed #1", icon: "st.unknown.zwave.remote-controller", backgroundColor: "#00A0DC"
-        }
-
-        valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false) {
-            state "battery", label:'${currentValue}% battery', unit:""
-        }
-
-        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat") {
-            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-        }
-
-        main (["button"])
-        details(["button", "battery", "refresh"])
-    }
 }
 
 def parse(String description) {
