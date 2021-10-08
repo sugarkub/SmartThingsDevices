@@ -15,128 +15,128 @@
  *  Based on original ZigBee Button by Mitch Pond 2015
  *
  *  Problem: Both "held" and "pushed" perform the same action.
- *
  */
 
 import groovy.json.JsonOutput
 import physicalgraph.zigbee.zcl.DataType
 
 metadata {
-    definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
-        capability "Battery"
-        capability "Button"
-        capability "Actuator"
-        capability "Sensor"
-        capability "Refresh"
+   definition (name: "Aqara T1 Button", namespace: "sugarkub", author: "sugarkub", minHubCoreVersion: "000.022.0002", ocfDeviceType: "x.com.st.d.remotecontroller") {
+      capability "Battery"
+      capability "Button"
+      capability "Actuator"
+      capability "Sensor"
+      capability "Refresh"
 
-        fingerprint inClusters: "0000, 0003, 0001", outClusters: "0003, 0019, 0006", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
-    }
+      fingerprint inClusters: "0000, 0003, 0001", outClusters: "0003, 0019, 0006", manufacturer: "LUMI", model: "lumi.remote.b1acn02", deviceJoinName: "Aqara T1 Button" //Aqara T1 Button
+   }
 
-    simulator {}
+   simulator {}
 
-    preferences {}
+   preferences {}
 }
 
 def parse(String description) {
-    log.debug "parse >> $description"
-    def event = zigbee.getEvent(description)
-    if (event) {
-        sendEvent(event)
-    }
-    else {
-        def descMap = zigbee.parseDescriptionAsMap(description)
-        if (descMap.clusterInt == 0x0001 && descMap.attrInt == 0x0020 && descMap.value != null) {
-            event = getBatteryResult(zigbee.convertHexToInt(descMap.value))
-        }
-        else if (descMap.clusterInt == 0x0006) {
-            event = parseButtonMessage(descMap)
-        }
+   log.debug "parse >> $description"
+   def event = zigbee.getEvent(description)
+   if (event) {
+      sendEvent(event)
+   }
+   else {
+      def descMap = zigbee.parseDescriptionAsMap(description)
+      if (descMap.clusterInt == 0x0001 && descMap.attrInt == 0x0020 && descMap.value != null) {
+         event = getBatteryResult(zigbee.convertHexToInt(descMap.value))
+      }
+      else if (descMap.clusterInt == 0x0006) {
+         event = parseButtonMessage(descMap)
+      }
 
-        log.debug "Parse returned $event"
-        def result = event ? createEvent(event) : []
+      log.debug "Parse returned $event"
+      def result = event ? createEvent(event) : []
 
-        if (description?.startsWith('enroll request')) {
-            List cmds = zigbee.enrollResponse()
-            result = cmds?.collect { new physicalgraph.device.HubAction(it) }
-        }
-        return result
-    }
+      if (description?.startsWith('enroll request')) {
+         List cmds = zigbee.enrollResponse()
+         result = cmds?.collect { new physicalgraph.device.HubAction(it) }
+      }
+      return result
+   }
 }
 
 private Map getBatteryResult(rawValue) {
-    log.debug 'Battery'
-    def volts = rawValue / 10
-    if (volts > 3.0 || volts == 0 || rawValue == 0xFF) {
-        return [:]
-    }
-    else {
-        def result = [
-                name: 'battery'
-        ]
-        def minVolts = 2.1
-        def maxVolts = 3.0
-        def pct = (volts - minVolts) / (maxVolts - minVolts)
-        result.value = Math.min(100, (int)(pct * 100))
-        def linkText = getLinkText(device)
-        result.descriptionText = "${linkText} battery was ${result.value}%"
-        return result
-    }
+   log.debug 'Battery'
+   def volts = rawValue / 10
+   if (volts > 3.0 || volts == 0 || rawValue == 0xFF) {
+      return [:]
+   }
+   else {
+      def result = [
+         name: 'battery'
+      ]
+      def minVolts = 2.1
+      def maxVolts = 3.0
+      def pct = (volts - minVolts) / (maxVolts - minVolts)
+      result.value = Math.min(100, (int)(pct * 100))
+      def linkText = getLinkText(device)
+      result.descriptionText = "${linkText} battery was ${result.value}%"
+      return result
+   }
 }
 
 private Map parseButtonMessage(Map descMap){
-    def buttonState = ""
-    def descriptionText = ""
+   def buttonState = ""
+   def descriptionText = ""
 
-    if (descMap.commandInt == 2) {
-        buttonState = "pushed"
-        descriptionText = "$device.displayName button was pushed"
-    } else if (descMap.commandInt == 0) {
-        buttonState = "double"
-        descriptionText = "$device.displayName button was double clicked"
-    }
+   if (descMap.commandInt == 2) {
+      buttonState = "pushed"
+      descriptionText = "$device.displayName button was pushed"
+   }
+   else if (descMap.commandInt == 0) {
+      buttonState = "double"
+      descriptionText = "$device.displayName button was double clicked"
+   }
 
-    return createEvent(name: "button", value: buttonState, data: [buttonState: descMap.commandInt], descriptionText: descriptionText, isStateChange: true)
+   return createEvent(name: "button", value: buttonState, data: [buttonState: descMap.commandInt], descriptionText: descriptionText, isStateChange: true)
 }
 
 def refresh() {
-    log.debug "Refreshing Battery"
+   log.debug "Refreshing Battery"
 
-    return zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20) +
-            zigbee.enrollResponse()
+   return zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20) +
+         zigbee.enrollResponse()
 }
 
 def configure() {
-    log.debug "Configuring Aqara T1 Button (WXKG13LM)"
-    def cmds = []
-    return zigbee.onOffConfig() +
-            zigbee.levelConfig() +
-            zigbee.configureReporting(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20, DataType.UINT8, 30, 21600, 0x01) +
-            zigbee.enrollResponse() +
-            zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20) +
-            cmds
+   log.debug "Configuring Aqara T1 Button (WXKG13LM)"
+   def cmds = []
+   return zigbee.onOffConfig() +
+         zigbee.levelConfig() +
+         zigbee.configureReporting(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20, DataType.UINT8, 30, 21600, 0x01) +
+         zigbee.enrollResponse() +
+         zigbee.readAttribute(zigbee.POWER_CONFIGURATION_CLUSTER, 0x20) +
+         cmds
 
 }
 
 def installed() {
-    initialize()
+   initialize()
 
-    // Initialize default states
-    device.currentValue("numberOfButtons")?.times {
-        sendEvent(name: "button", value: "pushed", data: [buttonNumber: it+1], displayed: false)
-    }
+   // Initialize default states
+   device.currentValue("numberOfButtons")?.times {
+      sendEvent(name: "button", value: "pushed", data: [buttonNumber: it+1], displayed: false)
+   }
 }
 
 def updated() {
-    initialize()
+   initialize()
 }
 
 def initialize() {
-    // Arrival sensors only goes OFFLINE when Hub is off
-    sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)
-    sendEvent(name: "numberOfButtons", value: 1, displayed: false)
-    sendEvent(name: "supportedButtonValues", value: ["pushed","double"], displayed: true)
+   // Arrival sensors only goes OFFLINE when Hub is off
+   sendEvent(name: "DeviceWatch-Enroll", value: JsonOutput.toJson([protocol: "zigbee", scheme:"untracked"]), displayed: false)
+   sendEvent(name: "numberOfButtons", value: 1, displayed: false)
+   sendEvent(name: "supportedButtonValues", value: ["pushed","double"], displayed: true)
 
-    // Leave from all groups
-    def cmds = zigbee.command(0x0004, 0x04)
+   // Leave from all groups
+   def cmds = zigbee.command(0x0004, 0x04)
 	cmds.each { sendHubCommand(new physicalgraph.device.HubAction(it)) }
 }
