@@ -61,8 +61,8 @@ metadata
 }
 
 def installed() {
-   String model = device.getDataValue('model')
-   int numberOfButtons = 0
+   def model = device.getDataValue('model')
+   def numberOfButtons = 0
 
    if (model == 'TS004F') {
       infoLog("Sending request to initialize TS004F in Scene Switch mode")
@@ -121,19 +121,19 @@ def parse(description) {
    }
    else {
       if ((description?.startsWith('catchall:')) || (description?.startsWith('read attr -'))) {
-         Map descMap = zigbee.parseDescriptionAsMap(description)
+         def descMap = zigbee.parseDescriptionAsMap(description)
          event = parseButtonMessage(descMap)
       }
 
-      Map result = []
+      def result = []
       if (event) {
          debugLog("Creating event: ${event}")
          result = createEvent(event)
       }
       else if (isBindingTableMessage(description)) {
-         Integer groupAddr = getGroupAddrFromBindingTable(description)
+         def groupAddr = getGroupAddrFromBindingTable(description)
          if (groupAddr != null) {
-            List cmds = addHubToGroup(groupAddr)
+            def cmds = addHubToGroup(groupAddr)
             result = cmds?.collect
             {
                new physicalgraph.device.HubAction(it)
@@ -164,8 +164,8 @@ private channelNumber(String dni) {
 //2 -clusterint 8 data[0]==00
 //4 -clusterint 8 data[0]==01
 private List parseTS004F(Map descMap) {
-   String buttonState = 'pushed'
-   int buttonNumber
+   def buttonState = 'pushed'
+   def buttonNumber = 0
 
    if (descMap.clusterInt == 0x0006) {
       buttonNumber = (descMap.commandInt == 1) ? 1 : 3
@@ -226,7 +226,7 @@ private List parseTS004X(Map descMap) {
 
 private Map parseButtonMessage(Map descMap) {
    def model = device.getDataValue('model')
-   Map result = [:]
+   def result = [:]
 
    def parsed = []
    switch (model) {
