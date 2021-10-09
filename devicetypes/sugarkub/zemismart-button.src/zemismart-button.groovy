@@ -29,8 +29,6 @@ metadata
       capability 'Sensor'
       capability 'Health Check'
 
-      command "switchIntoSceneMode"
-
       //1
       fingerprint inClusters: '0000, 0001, 0006', outClusters: '0019, 000A', manufacturer: '_TZ3400_keyjqthh', model: 'TS0041', deviceJoinName: 'Zemismart Button', mnmn: 'SmartThings', vid: 'generic-2-button'
       fingerprint inClusters: '0000, 0001, 0006', outClusters: '0019, 000A', manufacturer: '_TZ3400_tk3s5tyg', model: 'TS0041', deviceJoinName: 'Zemismart Button', mnmn: 'SmartThings', vid: 'generic-2-button'
@@ -62,19 +60,13 @@ metadata
    }
 }
 
-def swicthIntoSceneMode()
-{
-   // magic
-   zigbee.writeAttribute(0x0006, 0x8004, 0x30, 0x01)
-}
-
 def installed() {
    String model = device.getDataValue('model')
    int numberOfButtons = 0
 
    if (model == 'TS004F') {
-      debugLog("Sending request to initialize TS004F in Scene Switch mode")
-      runInMillis(5000, switchIntoSceneMode)
+      infoLog("Sending request to initialize TS004F in Scene Switch mode")
+      zigbee.writeAttribute(0x0006, 0x8004, 0x30, 0x01)
       state.lastButtonNumber = 0
    }
 
