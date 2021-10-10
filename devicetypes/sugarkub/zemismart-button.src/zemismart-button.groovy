@@ -56,7 +56,6 @@ metadata
    preferences {
       input name: "useInfoLog", type: "bool", title: "Display info log messages?", defaultValue: true
       input name: "useDebugLog", type: "bool", title: "Display debug log messages?"
-
    }
 }
 
@@ -326,14 +325,14 @@ private List readDeviceBindingTable() {
    ["zdo mgmt-bind 0x${device.deviceNetworkId} 0", 'delay 200']
 }
 
-private debugLog(message) {
-   if (useDebugLog) {
-      log.debug "${device.displayName} ${message}"
+private infoLog(message) {
+   if (useInfoLog) {
+      log.info "${device.displayName} ${message}"
    }
 }
 
-private infoLog(message) {
+private debugLog(message) {
    if (useDebugLog) {
-      log.info "${device.displayName} ${message}"
+      log.debug "${device.displayName} ${message}"
    }
 }
