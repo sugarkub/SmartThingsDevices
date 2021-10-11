@@ -25,6 +25,7 @@ metadata
    {
       capability 'Actuator'
       capability 'Button'
+      capability 'Configuration'
       capability 'Holdable Button'
       capability 'Sensor'
       capability 'Health Check'
@@ -54,6 +55,7 @@ metadata
    }
 
    preferences {
+      input description: "2021.10.11", type: "paragraph", element: "paragraph", title: "Version"
       input name: "useInfoLog", type: "bool", title: "Display info log messages?", defaultValue: true
       input name: "useDebugLog", type: "bool", title: "Display debug log messages?"
    }
@@ -64,6 +66,7 @@ def installed() {
    def numberOfButtons = 0
 
    if (model == 'TS004F') {
+      // reference: https://github.com/Koenkk/zigbee2mqtt/discussions/7158
       infoLog("Sending request to initialize TS004F in Scene Switch mode")
       zigbee.writeAttribute(0x0006, 0x8004, 0x30, 0x01)
       state.lastButtonNumber = 0
